@@ -1,0 +1,158 @@
+{
+  "name": "WF-02 Knowledge Base Ingestion",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0a3c8dca-0886-4357-9987-e7d627db6fe6",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const chunks = [\n  {\n    pageContent: `KOMPLETT RUMSPRISLISTA för The Pot Karlskrona. Alla priser i SEK exkl. moms.\nTALK-rummet: HALVDAG 752 SEK, HELDAG 1 240 SEK. Kapacitet 1–4 personer.\nBOARD-rummet: HALVDAG 2 400 SEK, HELDAG 4 500 SEK. Kapacitet upp till 10 personer.\nSESSION-rummet: HALVDAG 3 400 SEK, HELDAG 6 400 SEK. Kapacitet upp till 12 personer.\nCREATIVE-rummet: HALVDAG 3 400 SEK, HELDAG 6 400 SEK. Kapacitet upp till 20 personer.\nGREENROOM: HALVDAG 6 000 SEK, HELDAG 9 000 SEK. Kapacitet 10–100 personer.\nKEYNOTE POCKET: HALVDAG 8 500 SEK, HELDAG 15 000 SEK. Kapacitet upp till 62 personer.\nKEYNOTE-arenan: HALVDAG 15 000 SEK, HELDAG 25 000 SEK. Kapacitet upp till 150 personer.\nFLOW och VIEW är INTE tillgängliga för extern bokning.`,\n    source: 'prislista',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `TALK-rummet på The Pot Karlskrona.\nKAPACITET: 1 till 4 personer.\nHALVDAGSPRIS: 752 SEK. HELDAGSPRIS: 1 240 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Vårt mest personliga rum — ett ombonat loungerum för samtal som kräver en privat och mjuk inramning. Perfekt för intimdiskussioner, coaching eller konfidentiella möten.\nTeknik: Integrerat med Google Meet. Valfri plattform via USB 3.0. Inga donglar behövs.\nPassar bäst för: enskilda samtal, coaching, privata diskussioner.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `BOARD-rummet på The Pot Karlskrona.\nKAPACITET: upp till 10 personer.\nHALVDAGSPRIS: 2 400 SEK. HELDAGSPRIS: 4 500 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Vårt eleganta styrelserum där klassisk mötestradition möter modern kreativitet. Fast styrelsesittning — perfekt för beslutsfattande och strategimöten.\nTeknik: Integrerat med Google Meet. Valfri plattform via USB 3.0. Inga donglar behövs.\nPassar bäst för: styrelsemöten, strategimöten, beslutsfattande, ledningsgrupp.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `SESSION-rummet på The Pot Karlskrona.\nKAPACITET: upp till 12 personer, fast sittning.\nHALVDAGSPRIS: 3 400 SEK. HELDAGSPRIS: 6 400 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Rummet där rymd möter fokus. Generös takhöjd och fantastiskt ljusinsläpp — perfekt för kreativa ledarskapsmöten och viktiga beslut.\nTeknik: Integrerat med Microsoft Teams. Valfri plattform via USB 3.0. Inga donglar behövs.\nPassar bäst för: ledarskapsmöten, grupper om 11–12 personer, ljus och luftig miljö.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `CREATIVE-rummet på The Pot Karlskrona.\nKAPACITET: upp till 20 personer.\nHALVDAGSPRIS: 3 400 SEK. HELDAGSPRIS: 6 400 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Ett rum skapat för skapande. Helt flexibel layout anpassad efter era behov — perfekt för workshops, inspirerande föreläsningar eller team som behöver tänka utanför boxen.\nTeknik: Integrerat med Google Meet. Valfri plattform via USB 3.0. Inga donglar behövs.\nPassar bäst för: workshops, föreläsningar, teamdagar, flexibla upplägg, grupper upp till 20 personer.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `GREENROOM på The Pot Karlskrona.\nKAPACITET: 10 till 100 personer beroende på möblering.\nHALVDAGSPRIS: 6 000 SEK. HELDAGSPRIS: 9 000 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Vårt mest flexibla rum som enkelt byter skepnad efter era behov. Lämpar sig bäst när man vill ha gott om utrymme — ett kreativt rum som ibland känns som ett vardagsrum. Kan öppnas upp för upp till 100 personer vid mingel.\nTeknik: Google Meet integrerat. Teams och Zoom via Pexip. USB 3.0.\nPassar bäst för: workshops, föreläsningar, mingel, flexibla event, stora grupper.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `KEYNOTE POCKET på The Pot Karlskrona.\nKAPACITET: upp till 62 personer.\nHALVDAGSPRIS: 8 500 SEK. HELDAGSPRIS: 15 000 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: En avskärmad del av Keynote-arenan. Professionell atmosfär i ett mer personligt format. Perfekt för medelstora grupper.\nTeknik: Google Meet. Teams och Zoom via Pexip. Extra mikrofon eller ingång: 895 SEK styck. Elektriker: 895 SEK per påbörjad timme.\nPassar bäst för: föreläsningar, presentationer, workshops, grupper om 30–62 personer.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `KEYNOTE-arenan på The Pot Karlskrona.\nKAPACITET: upp till 150 personer.\nHALVDAGSPRIS: 15 000 SEK. HELDAGSPRIS: 25 000 SEK. Alla priser exkl. moms.\nHalvdag: 08:00–12:00 eller 13:00–17:00. Heldag: 08:00–17:00.\nBeskrivning: Vår största och mest mångsidiga arena — för allt från ett enkelt stormöte till era mest ambitiösa evenemang. Klassisk konferens upp till 150 personer, mässa eller storslagen fest. Tillgång till streamingstudio.\nTeknik: Google Meet. Teams och Zoom via Pexip. 2 mikrofoner ingår. Extra ingångar: 895 SEK styck. Elektriker: 895 SEK per påbörjad timme.\nPassar bäst för: stora konferenser, stormöten, mässor, event, streaming, keynote speakers.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `VIKTIGT: Rum som INTE är tillgängliga för bokning på The Pot Karlskrona. FLOW-rummet (8 personer) och VIEW-rummet (12 personer) är INTE tillgängliga för extern bokning — de är uthyrda till långtidshyresgäster. Nämn aldrig dessa rum för kunder. Om en kund frågar specifikt om Flow eller View, förklara att de inte är tillgängliga och föreslå ett alternativt rum baserat på gruppstorleken.`,\n    source: 'rum_karlskrona',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `Ingår i ALLA konferensrum på The Pot utan extra kostnad: Skärm, blädderblock, post-it, anteckningsblock, pennor, whiteboard, snabbt Wi-Fi, hybridmöten med ett knapptryck, kaffe, te, vatten och kolor. Dessa är standard i varje rum — inget behöver beställas separat. Alla rum har hissar. Handikapsanpassad WC finns på alla våningar.`,\n    source: 'rum_ingår',\n    location: 'both'\n  },\n  {\n    pageContent: `CATERINGPRISER på The Pot — levererat av Antonio's restaurang. Alla priser per person exkl. moms.\nHELDAGSKONFERENSPAKET: 425 SEK per person. Inkluderar förmiddagsfika, lunch och eftermiddagsfika.\nHALVDAGSKONFERENSPAKET: 300 SEK per person. Inkluderar fika och lunch.\nFIKA (fristående): 125 SEK per person.\nLUNCH (fristående): 175 SEK per person.\nVIKTIGT: Specialkost och allergier måste meddelas senast 10 dagar före ankomst för att kunna garanteras. Kontakta hej@thepot.se för kostbehov.`,\n    source: 'catering',\n    location: 'both'\n  },\n  {\n    pageContent: `Bokningsregler på The Pot Karlskrona.\nSTANDARDTIDER: 08:00–17:00 alla dagar i veckan.\nHALVDAG FÖRMIDDAG: 08:00–12:00. HALVDAG EFTERMIDDAG: 13:00–17:00. HELDAG: 08:00–17:00.\nTILLÄGG UTANFÖR STANDARDTID: 795 SEK per påbörjad timme.\nBOKNINGSFRIST utan catering: senast kl 17:00 dagen innan mötet, oavsett veckodag.\nANPASSADE TIDER: Kunder kan boka valfri tidsperiod inom 08:00–17:00. Om bokningen ryms inom enbart förmiddagen eller eftermiddagen → halvdagspris. Om bokningen täcker hela dagen → heldagspris. Om bokningen sträcker sig över BÅDE förmiddag OCH eftermiddag men är kortare än 8 timmar → eskalera till teamet för prissättning.\nPARKERING: 2 gästplatser, först till kvarn, måste bokas i förväg.`,\n    source: 'bokningsregler',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `Avbokningsregler på The Pot.\nMER ÄN 15 DAGAR FÖRE: Kostnadsfri avbokning.\n8–14 DAGAR FÖRE: 50 procent av totala bokningskostnaden debiteras.\n7 DAGAR ELLER NÄRMARE: 100 procent av totala bokningskostnaden debiteras.\nSpecialkostbeställningar efter 10-dagarsgränsen är icke återbetalningsbara oavsett avbokningstidpunkt.\nAvbokning: kontakta hej@thepot.se med ditt bokningsnummer.`,\n    source: 'avbokningsregler',\n    location: 'both'\n  },\n  {\n    pageContent: `The Pot Karlskrona — kontakt och plats.\nADRESS: World Trade Center Karlskrona, city centre.\nE-POST: hej@thepot.se\nWEBBPLATS: https://www.thepot.se/karlskrona/\nFOAJÉ: Öppen för alla kostnadsfritt, vardagar 08:00–17:00. Ingen bokning behövs.\nFör bokningsförfrågningar, tillgänglighet, priser eller specialönskemål — kontakta hej@thepot.se. Teamet svarar snabbt under kontorstid.`,\n    source: 'kontakt',\n    location: 'karlskrona'\n  },\n  {\n    pageContent: `The Pot Karlshamn — alla rum, officiella priser och kontakt.\nADRESS: Pirgatan 6, Karlshamn, 374 38.\nE-POST KARLSHAMN: karlshamn@thepot.se\nWEBBPLATS: https://www.thepot.se/karlshamn/\nAlla priser exkl. moms. Priser bekräftade av The Pot maj 2026.\n\nFYREN: KAPACITET 4–5 personer. HALVDAG 1 000 SEK. HELDAG 1 400 SEK. TIMME 300 SEK.\nMysigt inglasat konferensrum mitt i The Pot. Utanför finns loungeytor med utsikt.\nPassar bäst för: litet möte, enskilt samtal, 1-till-1, liten grupp.\n\nTORNET: KAPACITET 25–50 personer. HALVDAG 6 500 SEK. HELDAG 10 000 SEK. TIMME 1 200 SEK.\nKreativt vardagsrum med 180 graders panoramavy över Karlshamn. Multifunktionellt rum med stor skärm, ljud, mobila skrivtavlor och köksö.\nPassar bäst för: workshops, styrelsemöten, föreläsningar, kreativa sessioner.\n\nVYN: KAPACITET upp till 50 personer. HALVDAG 9 750 SEK. HELDAG 15 000 SEK.\nLjus och luftig lokal med panoramavy. Möbleras utifrån era önskemål. Kan kombineras med Tornet och Navet.\nPassar bäst för: mingel, middag, presentation, breakout-sessioner.\n\nNAVET: KAPACITET 330–400 personer. HALVDAG 16 250 SEK. HELDAG 25 000 SEK.\nToppmodern multisal mitt i Piren. LED-skärm 8x4.5m, professionellt ljud och ljus. Biosittning med vadderade stolar.\nPassar bäst för: konserter, föreläsningar, konferenser, keynote speakers, event, sändningar.`,\n    source: 'rum_karlshamn',\n    location: 'karlshamn'\n  },\n  {\n    pageContent: `Rumsrekommendationsguide Karlshamn på The Pot.\n1–5 personer: FYREN — halvdag 1 000 SEK, heldag 1 400 SEK, timme 300 SEK.\n6–50 personer: TORNET — halvdag 6 500 SEK, heldag 10 000 SEK, timme 1 200 SEK.\nupp till 50 personer: VYN — halvdag 9 750 SEK, heldag 15 000 SEK.\n330–400 personer: NAVET — halvdag 16 250 SEK, heldag 25 000 SEK.\nKontakt Karlshamn: karlshamn@thepot.se. Alla priser exkl. moms.`,\n    source: 'rumsguide_karlshamn',\n    location: 'karlshamn'\n  },\n  {\n    pageContent: `Co-working och kontorsplatser på The Pot. The Pot erbjuder co-working, fasta kontorsplatser och dagspass på både Karlskrona och Karlshamn. Inspirerande, modern miljö omgiven av ambitiösa proffs. För co-working-medlemskap, fasta platser eller dagspass — besök thepot.se eller kontakta hej@thepot.se.`,\n    source: 'coworking',\n    location: 'both'\n  },\n  {\n    pageContent: `Vanliga frågor om The Pot.\nParkering: 2 gästparkeringsplatser i Karlskrona. Först till kvarn. Måste bokas i förväg.\nTillgänglighet: Alla rum nås med hiss. Handikapsanpassad WC finns.\nWi-Fi: Snabbt Wi-Fi ingår i alla rum utan extra kostnad.\nBesök utan bokning: Ja, foajén är öppen vardagar 08:00–17:00.\nBokning: Kontakta hej@thepot.se eller karlshamn@thepot.se beroende på plats.\nSenbokning: Rum utan catering kan bokas senast 17:00 dagen innan.\nBokningstid: Valfri period inom 08:00–17:00. Prissätts som halvdag eller heldag. TORNET och FYREN i Karlshamn erbjuder även timpris.`,\n    source: 'faq',\n    location: 'both'\n  },\n  {\n    pageContent: `Rumsrekommendationsguide på The Pot Karlskrona.\n1–4 personer: TALK — intimt och ombonat, 1 240 SEK heldag.\n5–10 personer: BOARD — elegant styrelserum, 4 500 SEK heldag.\n11–12 personer: SESSION — rymligt med naturligt ljus, 6 400 SEK heldag.\n13–20 personer: CREATIVE — flexibelt workshoprum, 6 400 SEK heldag.\n21–100 personer: GREENROOM — mest flexibelt, 9 000 SEK heldag.\n30–62 personer med presentation: KEYNOTE POCKET — 15 000 SEK heldag.\n63–150 personer: KEYNOTE-arenan — 25 000 SEK heldag.\nFLOW och VIEW är ej tillgängliga — föreslå alternativ.`,\n    source: 'rumsguide',\n    location: 'karlskrona'\n  }\n];\n\nreturn chunks.map(chunk => ({\n  json: {\n    text: chunk.pageContent,\n    metadata: {\n      source: chunk.source,\n      location: chunk.location\n    }\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "db520fc6-c46b-458f-83b2-8ca08f15edee",
+      "name": "Knowledge Base Content"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "thepot-knowledge",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "16cd6406-dbd3-443d-9094-952ad2af6888",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "JFM7uYXtX7B6Ln3P",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ $json.metadata.source }}"
+              },
+              {
+                "name": "location",
+                "value": "={{ $json.metadata.location }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        208
+      ],
+      "id": "72a33d25-81a7-4785-860d-ec2707d8b20c",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-2"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        416,
+        144
+      ],
+      "id": "975b1633-1182-47e2-8d73-94b3aaea0ff3",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ApUYrFm0cTiirrhl",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Base Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Base Content": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "88b4b172-8a09-41ed-9c53-4b21e53253eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e85755a1ab507c713a9f4cf48c4360502159bced58a203587866a6f09e12feba"
+  },
+  "id": "gk6xMfs7lMsaLLOn",
+  "tags": []
+}

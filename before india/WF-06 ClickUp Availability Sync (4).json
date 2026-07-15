@@ -1,0 +1,542 @@
+{
+  "name": "WF-06 ClickUp Availability Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        272
+      ],
+      "id": "e3e91a84-d23f-407a-a6ab-dbfb5e68ff5e",
+      "name": "Every Minute1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT last_run_ms FROM sync_state WHERE list_id = '901218538075';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        272
+      ],
+      "id": "95e7c3c0-27b0-46dd-8f0a-d31d17cd766e",
+      "name": "Get Last Run (KKR)1",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901218538075/task?date_updated_gt={{ $json.last_run_ms }}&order_by=updated",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        272
+      ],
+      "id": "f136baf6-af1b-4edc-a8e7-f985b443503c",
+      "name": "Get Changed Tasks (KKR)1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "chjjtVzyos9cm9rQ",
+          "name": "ClickUp — Sync Bot Token"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WF-06 privacy gate — emits ONLY room + times + status. Customer titles are never read.\nconst location = 'karlskrona';\nconst list_id  = '901218538075';\n\nconst out = [];\nfor (const item of $input.all()) {\n  for (const t of (item.json.tasks || [])) {\n    if (!t.start_date || !t.due_date) continue; // no times = not a bookable block\n\n    // Room field — matches 'Rum' (real Pot) or 'Room' (test), case-insensitive\n    const rf = (t.custom_fields || []).find(f => /^(rum|room)$/i.test(f.name || ''));\n    let room = null;\n    if (rf && rf.value !== undefined && rf.value !== null && rf.value !== '') {\n      const opts = (rf.type_config && rf.type_config.options) || [];\n      const v = rf.value;\n      let opt = opts.find(o => String(o.orderindex) === String(v)) // dropdown value = orderindex\n             || opts.find(o => o.id === v)                          // fallback: value is option id\n             || (typeof v === 'number' ? opts[v] : null);          // fallback: array index\n      room = opt ? opt.name : null;\n    }\n\n    // Status — ClickUp returns an object {status, type, ...}; store the lowercased name\n    const status = (t.status && t.status.status)\n      ? String(t.status.status).toLowerCase().trim()\n      : null;\n\n    out.push({ json: {\n      source_task_id: t.id,\n      location,\n      list_id,\n      room,\n      status,\n      start_ms: Number(t.start_date),\n      end_ms: Number(t.due_date),\n      date_updated_ms: Number(t.date_updated),\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        272
+      ],
+      "id": "c7e0e87e-dab9-4002-8f0a-c46fb15b2442",
+      "name": "Sanitize (KKR)1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO availability_sanitized (source_task_id, location, room, status, start_ts, end_ts, last_synced_at)\nVALUES ('{{ $json.source_task_id }}', '{{ $json.location }}', NULLIF('{{ $json.room }}',''), NULLIF('{{ $json.status }}',''), to_timestamp({{ $json.start_ms }}/1000.0), to_timestamp({{ $json.end_ms }}/1000.0), now())\nON CONFLICT (source_task_id) DO UPDATE SET location=EXCLUDED.location, room=EXCLUDED.room, status=EXCLUDED.status, start_ts=EXCLUDED.start_ts, end_ts=EXCLUDED.end_ts, last_synced_at=now();\nUPDATE sync_state SET last_run_ms = GREATEST(last_run_ms, {{ $json.date_updated_ms }}) WHERE list_id = '{{ $json.list_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1168,
+        272
+      ],
+      "id": "945b2203-133c-4ebd-9c9c-9f9a411eebbe",
+      "name": "Upsert + Advance (KKR)1",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT last_run_ms FROM sync_state WHERE list_id = '901218538115';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        496
+      ],
+      "id": "101a9563-52fe-4657-8392-4d91c080f172",
+      "name": "Get Last Run (KSH)1",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901218538115/task?date_updated_gt={{ $json.last_run_ms }}&order_by=updated",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        736,
+        496
+      ],
+      "id": "c86088d9-c5a5-4444-81d3-e7b47f5a8abf",
+      "name": "Get Changed Tasks (KSH)1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "chjjtVzyos9cm9rQ",
+          "name": "ClickUp — Sync Bot Token"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WF-06 privacy gate — emits ONLY room + times + status. Customer titles are never read.\nconst location = 'karlshamn';\nconst list_id  = '901218538115';\n\nconst out = [];\nfor (const item of $input.all()) {\n  for (const t of (item.json.tasks || [])) {\n    if (!t.start_date || !t.due_date) continue; // no times = not a bookable block\n\n    // Room field — matches 'Rum' (real Pot) or 'Room' (test), case-insensitive\n    const rf = (t.custom_fields || []).find(f => /^(rum|room)$/i.test(f.name || ''));\n    let room = null;\n    if (rf && rf.value !== undefined && rf.value !== null && rf.value !== '') {\n      const opts = (rf.type_config && rf.type_config.options) || [];\n      const v = rf.value;\n      let opt = opts.find(o => String(o.orderindex) === String(v)) // dropdown value = orderindex\n             || opts.find(o => o.id === v)                          // fallback: value is option id\n             || (typeof v === 'number' ? opts[v] : null);          // fallback: array index\n      room = opt ? opt.name : null;\n    }\n\n    // Status — ClickUp returns an object {status, type, ...}; store the lowercased name\n    const status = (t.status && t.status.status)\n      ? String(t.status.status).toLowerCase().trim()\n      : null;\n\n    out.push({ json: {\n      source_task_id: t.id,\n      location,\n      list_id,\n      room,\n      status,\n      start_ms: Number(t.start_date),\n      end_ms: Number(t.due_date),\n      date_updated_ms: Number(t.date_updated),\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        496
+      ],
+      "id": "01a46d04-96ea-415f-9f0f-af29cd2aa812",
+      "name": "Sanitize (KSH)1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO availability_sanitized (source_task_id, location, room, status, start_ts, end_ts, last_synced_at)\nVALUES ('{{ $json.source_task_id }}', '{{ $json.location }}', NULLIF('{{ $json.room }}',''), NULLIF('{{ $json.status }}',''), to_timestamp({{ $json.start_ms }}/1000.0), to_timestamp({{ $json.end_ms }}/1000.0), now())\nON CONFLICT (source_task_id) DO UPDATE SET location=EXCLUDED.location, room=EXCLUDED.room, status=EXCLUDED.status, start_ts=EXCLUDED.start_ts, end_ts=EXCLUDED.end_ts, last_synced_at=now();\nUPDATE sync_state SET last_run_ms = GREATEST(last_run_ms, {{ $json.date_updated_ms }}) WHERE list_id = '{{ $json.list_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1168,
+        496
+      ],
+      "id": "b3ca60e6-4e82-408b-b30c-ba02d43a78f6",
+      "name": "Upsert + Advance (KSH)1",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        832
+      ],
+      "id": "79a9b4ad-bd4f-4760-ace8-ab72350cd53e",
+      "name": "Every Minute"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT last_run_ms FROM sync_state WHERE list_id = '901218538075';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        864,
+        832
+      ],
+      "id": "c7d7dbc8-9e6c-43aa-b7e3-565a86c05e50",
+      "name": "Get Last Run (KKR)",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901218538075/task?date_updated_gt={{ $json.last_run_ms }}&include_closed=true&order_by=updated",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1088,
+        832
+      ],
+      "id": "1584794b-74ff-4349-a699-793777711094",
+      "name": "Get Changed Tasks (KKR)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "chjjtVzyos9cm9rQ",
+          "name": "ClickUp — Sync Bot Token"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WF-06 privacy gate — emits ONLY room + times + status. Customer titles are never read.\nconst location = 'karlskrona';\nconst list_id  = '901218538075';\n\nconst out = [];\nfor (const item of $input.all()) {\n  for (const t of (item.json.tasks || [])) {\n    if (!t.start_date || !t.due_date) continue; // no times = not a bookable block\n\n    // Room field — matches 'Rum' (real Pot) or 'Room' (test), case-insensitive\n    const rf = (t.custom_fields || []).find(f => /^(rum|room)$/i.test(f.name || ''));\n    let room = null;\n    if (rf && rf.value !== undefined && rf.value !== null && rf.value !== '') {\n      const opts = (rf.type_config && rf.type_config.options) || [];\n      const v = rf.value;\n      let opt = opts.find(o => String(o.orderindex) === String(v)) // dropdown value = orderindex\n             || opts.find(o => o.id === v)                          // fallback: value is option id\n             || (typeof v === 'number' ? opts[v] : null);          // fallback: array index\n      room = opt ? opt.name : null;\n    }\n\n    // Status — ClickUp returns an object {status, type, ...}; store the lowercased name\n    const status = (t.status && t.status.status)\n      ? String(t.status.status).toLowerCase().trim()\n      : null;\n\n    out.push({ json: {\n      source_task_id: t.id,\n      location,\n      list_id,\n      room,\n      status,\n      start_ms: Number(t.start_date),\n      end_ms: Number(t.due_date),\n      date_updated_ms: Number(t.date_updated),\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        832
+      ],
+      "id": "a24f8b4f-4418-4971-bbf7-022b98c92db3",
+      "name": "Sanitize (KKR)"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO availability_sanitized (source_task_id, location, room, status, start_ts, end_ts, last_synced_at)\nVALUES ('{{ $json.source_task_id }}', '{{ $json.location }}', NULLIF('{{ $json.room }}',''), NULLIF('{{ $json.status }}',''), to_timestamp({{ $json.start_ms }}/1000.0), to_timestamp({{ $json.end_ms }}/1000.0), now())\nON CONFLICT (source_task_id) DO UPDATE SET location=EXCLUDED.location, room=EXCLUDED.room, status=EXCLUDED.status, start_ts=EXCLUDED.start_ts, end_ts=EXCLUDED.end_ts, last_synced_at=now();\nUPDATE sync_state SET last_run_ms = GREATEST(last_run_ms, {{ $json.date_updated_ms }}) WHERE list_id = '{{ $json.list_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1520,
+        832
+      ],
+      "id": "3943d458-2300-4047-97c6-7d17c6ad2407",
+      "name": "Upsert + Advance (KKR)",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT last_run_ms FROM sync_state WHERE list_id = '901218538115';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        864,
+        1056
+      ],
+      "id": "18a038ee-fd21-446c-ac0d-982c0e97b1e7",
+      "name": "Get Last Run (KSH)",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.clickup.com/api/v2/list/901218538115/task?date_updated_gt={{ $json.last_run_ms }}&include_closed=true&order_by=updated",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1088,
+        1056
+      ],
+      "id": "6135055d-4cb6-4243-b233-faf65f2f5f25",
+      "name": "Get Changed Tasks (KSH)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "chjjtVzyos9cm9rQ",
+          "name": "ClickUp — Sync Bot Token"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// WF-06 privacy gate — emits ONLY room + times + status. Customer titles are never read.\nconst location = 'karlshamn';\nconst list_id  = '901218538115';\n\nconst out = [];\nfor (const item of $input.all()) {\n  for (const t of (item.json.tasks || [])) {\n    if (!t.start_date || !t.due_date) continue; // no times = not a bookable block\n\n    // Room field — matches 'Rum' (real Pot) or 'Room' (test), case-insensitive\n    const rf = (t.custom_fields || []).find(f => /^(rum|room)$/i.test(f.name || ''));\n    let room = null;\n    if (rf && rf.value !== undefined && rf.value !== null && rf.value !== '') {\n      const opts = (rf.type_config && rf.type_config.options) || [];\n      const v = rf.value;\n      let opt = opts.find(o => String(o.orderindex) === String(v)) // dropdown value = orderindex\n             || opts.find(o => o.id === v)                          // fallback: value is option id\n             || (typeof v === 'number' ? opts[v] : null);          // fallback: array index\n      room = opt ? opt.name : null;\n    }\n\n    // Status — ClickUp returns an object {status, type, ...}; store the lowercased name\n    const status = (t.status && t.status.status)\n      ? String(t.status.status).toLowerCase().trim()\n      : null;\n\n    out.push({ json: {\n      source_task_id: t.id,\n      location,\n      list_id,\n      room,\n      status,\n      start_ms: Number(t.start_date),\n      end_ms: Number(t.due_date),\n      date_updated_ms: Number(t.date_updated),\n    } });\n  }\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        1056
+      ],
+      "id": "075969c6-b4f4-4bc8-8af7-e7911aaad5f7",
+      "name": "Sanitize (KSH)"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO availability_sanitized (source_task_id, location, room, status, start_ts, end_ts, last_synced_at)\nVALUES ('{{ $json.source_task_id }}', '{{ $json.location }}', NULLIF('{{ $json.room }}',''), NULLIF('{{ $json.status }}',''), to_timestamp({{ $json.start_ms }}/1000.0), to_timestamp({{ $json.end_ms }}/1000.0), now())\nON CONFLICT (source_task_id) DO UPDATE SET location=EXCLUDED.location, room=EXCLUDED.room, status=EXCLUDED.status, start_ts=EXCLUDED.start_ts, end_ts=EXCLUDED.end_ts, last_synced_at=now();\nUPDATE sync_state SET last_run_ms = GREATEST(last_run_ms, {{ $json.date_updated_ms }}) WHERE list_id = '{{ $json.list_id }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1520,
+        1056
+      ],
+      "id": "6fe491c0-ddc1-40e9-944b-154d7c0c4473",
+      "name": "Upsert + Advance (KSH)",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Minute1": {
+      "main": [
+        [
+          {
+            "node": "Get Last Run (KKR)1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Last Run (KSH)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Run (KKR)1": {
+      "main": [
+        [
+          {
+            "node": "Get Changed Tasks (KKR)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Changed Tasks (KKR)1": {
+      "main": [
+        [
+          {
+            "node": "Sanitize (KKR)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize (KKR)1": {
+      "main": [
+        [
+          {
+            "node": "Upsert + Advance (KKR)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Run (KSH)1": {
+      "main": [
+        [
+          {
+            "node": "Get Changed Tasks (KSH)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Changed Tasks (KSH)1": {
+      "main": [
+        [
+          {
+            "node": "Sanitize (KSH)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize (KSH)1": {
+      "main": [
+        [
+          {
+            "node": "Upsert + Advance (KSH)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Minute": {
+      "main": [
+        [
+          {
+            "node": "Get Last Run (KKR)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Last Run (KSH)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Run (KKR)": {
+      "main": [
+        [
+          {
+            "node": "Get Changed Tasks (KKR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Changed Tasks (KKR)": {
+      "main": [
+        [
+          {
+            "node": "Sanitize (KKR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize (KKR)": {
+      "main": [
+        [
+          {
+            "node": "Upsert + Advance (KKR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Run (KSH)": {
+      "main": [
+        [
+          {
+            "node": "Get Changed Tasks (KSH)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Changed Tasks (KSH)": {
+      "main": [
+        [
+          {
+            "node": "Sanitize (KSH)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize (KSH)": {
+      "main": [
+        [
+          {
+            "node": "Upsert + Advance (KSH)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "eab29047-d8eb-4d52-8620-c2d6467c1c21",
+  "meta": {
+    "instanceId": "e85755a1ab507c713a9f4cf48c4360502159bced58a203587866a6f09e12feba"
+  },
+  "id": "Krx2vfMYFt6dcZmq",
+  "tags": []
+}

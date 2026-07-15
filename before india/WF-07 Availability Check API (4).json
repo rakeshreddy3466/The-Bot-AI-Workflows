@@ -1,0 +1,84 @@
+{
+  "name": "WF-07 Availability Check API",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH p AS (\n  SELECT\n    LOWER('{{ $json.location }}') AS loc,\n    LOWER('{{ $json.room }}')     AS room,\n    ('{{ $json.start }}'::timestamp AT TIME ZONE 'Europe/Stockholm') AS req_start,\n    ('{{ $json.end }}'::timestamp   AT TIME ZONE 'Europe/Stockholm') AS req_end\n),\nhard AS (\n  SELECT a.start_ts, a.end_ts FROM availability_sanitized a, p\n  WHERE LOWER(a.location) = p.loc AND LOWER(a.room) = p.room\n    AND (a.status IN ('bekräftad bokning','planerad') OR a.status IS NULL)\n),\nsoft AS (\n  SELECT a.start_ts, a.end_ts FROM availability_sanitized a, p\n  WHERE LOWER(a.location) = p.loc AND LOWER(a.room) = p.room\n    AND a.status = 'preliminärbokad'\n),\nhard_ovl AS (\n  SELECT 1 FROM hard, p WHERE hard.start_ts < p.req_end AND hard.end_ts > p.req_start LIMIT 1\n),\nsoft_ovl AS (\n  SELECT 1 FROM soft, p WHERE soft.start_ts < p.req_end AND soft.end_ts > p.req_start LIMIT 1\n),\nturn AS (\n  SELECT MAX(hard.end_ts) AS last_end FROM hard, p\n  WHERE hard.end_ts <= p.req_start AND hard.end_ts > (p.req_start - INTERVAL '15 minutes')\n)\nSELECT\n  (NOT EXISTS (SELECT 1 FROM hard_ovl)\n   AND NOT EXISTS (SELECT 1 FROM soft_ovl)\n   AND (SELECT last_end FROM turn) IS NULL) AS is_available,\n  CASE\n    WHEN EXISTS (SELECT 1 FROM hard_ovl) THEN 'overlap'\n    WHEN EXISTS (SELECT 1 FROM soft_ovl) THEN 'reserved'\n    WHEN (SELECT last_end FROM turn) IS NOT NULL THEN 'turnaround'\n    ELSE 'none'\n  END AS conflict,\n  CASE\n    WHEN NOT EXISTS (SELECT 1 FROM hard_ovl) AND NOT EXISTS (SELECT 1 FROM soft_ovl)\n         AND (SELECT last_end FROM turn) IS NOT NULL\n    THEN to_char(((SELECT last_end FROM turn) + INTERVAL '15 minutes') AT TIME ZONE 'Europe/Stockholm', 'HH24:MI')\n    ELSE NULL\n  END AS available_from;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        128,
+        -128
+      ],
+      "id": "e4f760c8-2bb0-4cfa-984b-c95b840333c0",
+      "name": "Check Availability",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "location"
+            },
+            {
+              "name": "room"
+            },
+            {
+              "name": "start"
+            },
+            {
+              "name": "end"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        -128
+      ],
+      "id": "11258810-addc-4e82-bca5-6b047d18efd3",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Check Availability": {
+      "main": [
+        []
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Check Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "94f344fe-d653-4594-b23c-326b06fa8ea0",
+  "meta": {
+    "instanceId": "e85755a1ab507c713a9f4cf48c4360502159bced58a203587866a6f09e12feba"
+  },
+  "id": "q2CQ4OPUUBl7UdDY",
+  "tags": []
+}

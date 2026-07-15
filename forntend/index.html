@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="description" content="Mötesstrategen – AI-assistent för The Pot">
+  <meta name="referrer" content="no-referrer">
+  <title>Mötesstrategen — The Pot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080909;
+      --surface: #111214;
+      --s2: #191b1f;
+      --s3: #212428;
+      --border: rgba(255,255,255,0.07);
+      --ba: rgba(64,188,134,0.28);
+      --accent: #40BC86;
+      --ad: #2ea070;
+      --ag: rgba(64,188,134,0.1);
+      --text: #f2f2f0;
+      --tm: rgba(242,242,240,0.45);
+      --td: rgba(242,242,240,0.22);
+      --ub: #40BC86;
+      --ut: #031a0e;
+      --bb: #191b1f;
+      --err: #f87171;
+      --fh: 'Syne', sans-serif;
+      --fb: 'Outfit', sans-serif;
+      --r: 16px;
+      --rs: 10px;
+      --ease: cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: var(--fb); font-size: 15px; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+    textarea { font: inherit; color: inherit; resize: none; border: none; background: none; outline: none; }
+
+    /* ── Welcome ── */
+    #welcome {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+      background: var(--bg); z-index: 100;
+      transition: opacity 0.5s var(--ease), visibility 0.5s var(--ease);
+    }
+    #welcome.out { opacity: 0; visibility: hidden; pointer-events: none; }
+    .w-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 60% 40% at 50% -5%, rgba(64,188,134,0.08), transparent 60%),
+                  radial-gradient(ellipse 35% 25% at 85% 85%, rgba(64,188,134,0.05), transparent 50%);
+    }
+    .w-body { position: relative; text-align: center; max-width: 500px; width: 100%; }
+    .logotype { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 52px; animation: upIn 0.55s var(--ease) both; }
+    .logo-box { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--fh); font-weight: 800; font-size: 13px; color: var(--ut); flex-shrink: 0; }
+    .logo-text { font-family: var(--fh); font-weight: 600; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tm); }
+    .w-h1 { font-family: var(--fh); font-weight: 800; font-size: clamp(38px, 8vw, 58px); letter-spacing: -2px; line-height: 1; margin-bottom: 18px; animation: upIn 0.55s 0.08s var(--ease) both; }
+    .w-h1 em { font-style: normal; color: var(--accent); }
+    .w-p { font-size: 15.5px; font-weight: 300; color: var(--tm); margin-bottom: 44px; line-height: 1.75; animation: upIn 0.55s 0.16s var(--ease) both; }
+    .w-label { font-family: var(--fh); font-size: 10.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--td); margin-bottom: 14px; animation: upIn 0.55s 0.24s var(--ease) both; }
+    .loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; animation: upIn 0.55s 0.32s var(--ease) both; }
+    .loc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px 18px 18px; cursor: pointer; text-align: left; position: relative; overflow: hidden; transition: border-color 220ms var(--ease), transform 220ms var(--ease), box-shadow 220ms var(--ease); }
+    .loc-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 15% 85%, var(--ag), transparent 65%); opacity: 0; transition: opacity 250ms var(--ease); }
+    .loc-card:hover { border-color: var(--ba); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+    .loc-card:hover::after { opacity: 1; }
+    .loc-card.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 28px rgba(0,0,0,.3); }
+    .loc-card.on::after { opacity: 1; }
+    .loc-check { position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(0.4); transition: opacity 200ms var(--ease), transform 200ms var(--ease); }
+    .loc-card.on .loc-check { opacity: 1; transform: scale(1); }
+    .loc-city { font-family: var(--fh); font-weight: 700; font-size: 17px; letter-spacing: -0.3px; margin-bottom: 3px; }
+    .loc-addr { font-size: 12px; color: var(--tm); font-weight: 300; }
+    .start-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 15px 28px; background: var(--accent); color: var(--ut); border-radius: var(--rs); font-family: var(--fh); font-weight: 700; font-size: 14.5px; transition: background 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease), opacity 200ms var(--ease); animation: upIn 0.55s 0.4s var(--ease) both; }
+    .start-btn:hover:not(:disabled) { background: var(--ad); transform: translateY(-1px); box-shadow: 0 8px 22px rgba(64,188,134,0.28); }
+    .start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ── Chat ── */
+    #chat { position: fixed; inset: 0; display: flex; flex-direction: column; opacity: 0; visibility: hidden; transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease); }
+    #chat.on { opacity: 1; visibility: visible; }
+    #chat::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 55% 35% at 50% 0%, rgba(64,188,134,0.05), transparent 55%); pointer-events: none; z-index: 0; }
+
+    .c-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 10px; padding: 0 20px; height: 58px; background: rgba(8,9,9,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 1px 0 0 var(--border), 0 4px 16px rgba(0,0,0,0.25); flex-shrink: 0; }
+    .c-brand { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .c-logo { width: 28px; height: 28px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: var(--fh); font-weight: 800; font-size: 11px; color: var(--ut); flex-shrink: 0; }
+    .c-title { font-family: var(--fh); font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .c-loc { display: flex; align-items: center; gap: 6px; padding: 5px 11px; background: var(--s2); border: 1px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--tm); white-space: nowrap; flex-shrink: 0; }
+    .c-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .c-new { width: 34px; height: 34px; border-radius: 8px; background: var(--s2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; transition: border-color 180ms var(--ease), background 180ms var(--ease); flex-shrink: 0; }
+    .c-new:hover { border-color: var(--ba); background: var(--s3); }
+
+    /* ── Messages ── */
+    .msgs { position: relative; z-index: 1; flex: 1; overflow-y: auto; padding: 24px 20px 8px; display: flex; flex-direction: column; scroll-behavior: smooth; }
+    .msgs::-webkit-scrollbar { width: 3px; }
+    .msgs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+    .msg-row { display: flex; gap: 9px; margin-bottom: 4px; animation: msgUp 0.28s var(--ease) both; }
+    .msg-row.user { justify-content: flex-end; }
+    .msg-row.bot  { justify-content: flex-start; align-items: flex-end; }
+    .msg-row.gap  { margin-bottom: 14px; }
+
+    .av { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, rgba(64,188,134,0.18), rgba(64,188,134,0.04)); border: 1px solid rgba(64,188,134,0.18); display: flex; align-items: center; justify-content: center; font-family: var(--fh); font-weight: 700; font-size: 10px; color: var(--accent); flex-shrink: 0; }
+
+    .msg-col { max-width: min(480px, 84vw); min-width: 0; }
+
+    .bubble { padding: 11px 15px; border-radius: 18px; line-height: 1.65; font-size: 14.5px; word-break: break-word; overflow-wrap: break-word; }
+    .msg-row.user .bubble { background: var(--ub); color: var(--ut); border-bottom-right-radius: 4px; font-weight: 500; }
+    .msg-row.bot  .bubble { background: var(--bb); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+    /* Rich bubble (contains table/cards) */
+    .msg-row.bot .bubble.rich { background: transparent; border-color: transparent; padding: 0; }
+    .msg-row.bot .msg-col.rich-col { max-width: min(580px, 90vw); }
+
+    /* ── Markdown inside bubbles ── */
+    .bubble p { margin-bottom: 10px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble strong { font-weight: 600; }
+    .bubble em { font-style: italic; color: var(--tm); }
+    .bubble ul, .bubble ol { padding-left: 18px; margin: 6px 0 10px; }
+    .bubble li { margin-bottom: 3px; }
+    .bubble ul li::marker { color: var(--accent); }
+    .bubble .sig { color: var(--td); font-size: 13px; margin-top: 2px; }
+    .bubble hr.sum-hr, .txt-seg hr.sum-hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* Plain text bubble segment (when mixed with rich) */
+    .txt-seg { background: var(--bb); border: 1px solid var(--border); border-radius: 16px; padding: 10px 14px; margin-bottom: 8px; font-size: 14.5px; line-height: 1.65; word-break: break-word; overflow-wrap: break-word; }
+    .txt-seg p { margin-bottom: 8px; }
+    .txt-seg p:last-child { margin-bottom: 0; }
+    .txt-seg strong { font-weight: 600; }
+    .txt-seg .sig { color: var(--td); font-size: 13px; }
+
+    /* ── Room Cards ── */
+    .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin: 4px 0 6px; }
+
+    .rcard {
+      background: var(--s3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      animation: cardIn 0.32s var(--ease) both;
+      transition: transform 200ms var(--ease), box-shadow 200ms var(--ease), border-color 200ms var(--ease);
+      cursor: default;
+    }
+    .rcard:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 10px 24px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.12); }
+
+    .rcard-vis {
+      height: 80px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      padding: 10px;
+    }
+    .rcard-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.75; }
+    .rcard-img-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 60%); }
+    .rcard-badge { position: relative; z-index: 1; display: inline-block; padding: 3px 8px; border-radius: 6px; font-family: var(--fh); font-weight: 700; font-size: 11px; letter-spacing: 0.04em; }
+
+    .rcard-body { padding: 10px 11px 11px; }
+    .rcard-cap { font-size: 11px; color: var(--tm); font-weight: 400; margin-bottom: 8px; line-height: 1.3; }
+    .rcard-prices { display: flex; flex-direction: column; gap: 4px; }
+    .rcard-price { display: flex; justify-content: space-between; align-items: baseline; }
+    .rcard-price-label { font-size: 10px; color: var(--td); font-weight: 400; }
+    .rcard-price-val { font-size: 11.5px; font-weight: 600; color: var(--text); }
+
+    /* ── Generic Table ── */
+    .md-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 6px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .md-table th { background: rgba(255,255,255,0.04); padding: 8px 11px; text-align: left; font-family: var(--fh); font-weight: 600; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tm); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .md-table td { padding: 7px 11px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .md-table tr:last-child td { border-bottom: none; }
+    .md-table tr:hover td { background: rgba(255,255,255,0.025); }
+
+    /* ── Typing + Error ── */
+    .typing-row { display: flex; gap: 9px; align-items: flex-end; margin-bottom: 14px; animation: msgUp 0.28s var(--ease) both; }
+    .typing-bub { background: var(--bb); border: 1px solid var(--border); border-radius: 18px; border-bottom-left-radius: 4px; padding: 13px 16px; display: flex; gap: 5px; align-items: center; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tm); animation: bounce 1.4s ease-in-out infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    .msg-meta { font-size: 10.5px; color: var(--td); margin-top: 3px; padding: 0 3px; }
+    .msg-row.user .msg-meta { text-align: right; }
+
+    .err-bubble { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.18); border-radius: 12px; font-size: 13.5px; color: var(--err); max-width: min(380px, 82vw); }
+
+    /* ── Quick actions ── */
+    .qa-bar { position: relative; z-index: 1; display: flex; gap: 7px; padding: 4px 20px 12px; overflow-x: auto; flex-shrink: 0; }
+    .qa-bar::-webkit-scrollbar { display: none; }
+    .qa-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 13px; background: var(--s2); border: 1px solid var(--border); border-radius: 20px; font-size: 12.5px; font-weight: 500; white-space: nowrap; color: var(--tm); transition: border-color 180ms var(--ease), color 180ms var(--ease), background 180ms var(--ease); }
+    .qa-chip:hover { border-color: var(--ba); color: var(--accent); background: var(--ag); }
+
+    /* ── Input ── */
+    .input-zone { position: relative; z-index: 1; padding: 10px 20px 18px; background: rgba(8,9,9,0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 -1px 0 0 var(--border); flex-shrink: 0; }
+    .input-wrap { display: flex; align-items: flex-end; gap: 8px; background: var(--s2); border: 1px solid var(--border); border-radius: var(--r); padding: 9px 9px 9px 15px; transition: border-color 200ms var(--ease); }
+    .input-wrap:focus-within { border-color: rgba(64,188,134,0.35); }
+    #m-in { flex: 1; font-size: 14.5px; line-height: 1.6; min-height: 24px; max-height: 110px; overflow-y: auto; color: var(--text); padding: 1px 0; }
+    #m-in::placeholder { color: var(--tm); }
+    #m-in::-webkit-scrollbar { width: 2px; }
+    #m-in::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+    #cc { font-size: 10.5px; color: var(--td); align-self: flex-end; padding-bottom: 2px; transition: color 180ms var(--ease); white-space: nowrap; }
+    #cc.warn { color: #fbbf24; }
+    #cc.over { color: var(--err); }
+    .send-btn { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--ut); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 180ms var(--ease), transform 180ms var(--ease), opacity 180ms var(--ease); }
+    .send-btn:hover:not(:disabled) { background: var(--ad); transform: scale(1.06); }
+    .send-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+    /* ── Animations ── */
+    @keyframes upIn   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes msgUp  { from { opacity:0; transform:translateY(7px);  } to { opacity:1; transform:translateY(0); } }
+    @keyframes cardIn { from { opacity:0; transform:scale(0.94) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    @keyframes bounce { 0%,80%,100% { transform:translateY(0); opacity:0.45; } 40% { transform:translateY(-7px); opacity:1; } }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) { .w-h1 { font-size: 34px; letter-spacing: -1.5px; } .room-grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 700px) { .c-header { padding: 0 28px; } .msgs { padding: 28px 28px 10px; } .qa-bar { padding: 4px 28px 14px; } .input-zone { padding: 10px 28px 22px; } .msg-col, .msg-col.rich-col { max-width: min(560px, 75vw); } }
+    @media (min-width: 1100px) { #chat { max-width: 860px; left: 50%; transform: translateX(-50%); border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+  </style>
+</head>
+<body>
+
+<div id="welcome" role="main" aria-label="Välkommen">
+  <div class="w-glow" aria-hidden="true"></div>
+  <div class="w-body">
+    <div class="logotype">
+      <div class="logo-box" aria-hidden="true">TP</div>
+      <span class="logo-text">The Pot</span>
+    </div>
+    <h1 class="w-h1">Mötes<em>strategen</em></h1>
+    <p class="w-p">Din AI-assistent för The Pot. Kolla tillgänglighet, boka rum och få svar på dina frågor — direkt i chatten.</p>
+    <p class="w-label">Välj plats</p>
+    <div class="loc-grid" id="loc-grid" role="radiogroup" aria-label="Välj plats">
+      <button class="loc-card" data-loc="karlskrona" role="radio" aria-checked="false" aria-label="Karlskrona, Blekingegatan 1">
+        <div class="loc-check" aria-hidden="true"><svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.2 5.5L8 1" stroke="#031a0e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="loc-city">Karlskrona</div>
+        <div class="loc-addr">Blekingegatan 1</div>
+      </button>
+      <button class="loc-card" data-loc="karlshamn" role="radio" aria-checked="false" aria-label="Karlshamn, Östra Pirens">
+        <div class="loc-check" aria-hidden="true"><svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.2 5.5L8 1" stroke="#031a0e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="loc-city">Karlshamn</div>
+        <div class="loc-addr">Östra Pirens</div>
+      </button>
+    </div>
+    <button id="start-btn" class="start-btn" disabled aria-label="Starta chatt">
+      Starta chatt
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M2.5 7.5h10M9 3.5l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="chat" role="main" aria-label="Chatt">
+  <header class="c-header">
+    <div class="c-brand">
+      <div class="c-logo" aria-hidden="true">TP</div>
+      <span class="c-title" translate="no">Mötesstrategen</span>
+    </div>
+    <div class="c-loc" aria-live="polite">
+      <span class="c-dot" aria-hidden="true"></span>
+      <span id="loc-lbl">—</span>
+    </div>
+    <button class="c-new" id="new-btn" aria-label="Ny chatt" title="Ny chatt">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M7.5 2.5v10M2.5 7.5h10" stroke="rgba(242,242,240,0.45)" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  </header>
+  <div class="msgs" id="msgs" role="log" aria-live="polite" aria-label="Konversation"></div>
+  <div class="qa-bar" id="qa-bar" aria-label="Snabbval"></div>
+  <div class="input-zone">
+    <div class="input-wrap">
+      <textarea id="m-in" rows="1" placeholder="Skriv ett meddelande…" maxlength="500" aria-label="Skriv ditt meddelande" autocomplete="off" spellcheck="true"></textarea>
+      <span id="cc" aria-hidden="true"></span>
+      <button class="send-btn" id="send-btn" disabled aria-label="Skicka">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M12.5 7.5H2.5m7-4.5 4 4.5-4 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const CFG = Object.freeze({
+  url: 'https://deflator-pretzel-tweak.ngrok-free.dev/webhook/thepot-chat',
+  token:   '64338df113c1508ba38f50024e1c1ca51c36d2b9127766cc13b5090709f20496',
+  maxLen:  500,
+  timeout: 60000,
+  rateMs:  2000,
+});
+
+// Add real room image URLs here. Empty string = gradient fallback.
+const ROOM_IMAGES = Object.freeze({
+  'CREATIVE':        'https://media.thepot.se/2023/03/Konferens-och-motesrum-Creative-9.jpg',
+  'KEYNOTE':         '',
+  'KEYNOTE POCKET':  '',
+  'GREENROOM':       '',
+  'SESSION':         '',
+  'BOARD':           '',
+  'TALK':            '',
+  'VYN':             '',
+  'NAVET':           '',
+  'TORNET':          '',
+});
+
+// Room accent colors
+const ROOM_PALETTE = [
+  ['KEYNOTE POCKET', '#f97316'],
+  ['KEYNOTE',        '#e11d48'],
+  ['GREENROOM',      '#14b8a6'],
+  ['CREATIVE',       '#a855f7'],
+  ['SESSION',        '#40BC86'],
+  ['BOARD',          '#f59e0b'],
+  ['TALK',           '#6366f1'],
+  ['TORNET',         '#c084fc'],
+  ['NAVET',          '#fb923c'],
+  ['VYN',            '#38bdf8'],
+];
+
+const QUICK = {
+  karlskrona: [
+    { label: 'Tillgänglighet', msg: 'Vilka rum är lediga denna vecka?' },
+    { label: 'Bokningspriser',  msg: 'Vad kostar det att boka ett rum?' },
+    { label: 'Boka SESSION',    msg: 'Jag vill boka SESSION-rummet' },
+    { label: 'Boka BOARD',      msg: 'Jag vill boka BOARD-rummet' },
+    { label: 'Avboka',          msg: 'Jag vill avboka en bokning' },
+    { label: 'Öppettider',      msg: 'Vilka är era öppettider?' },
+  ],
+  karlshamn: [
+    { label: 'Tillgänglighet', msg: 'Vilka rum är lediga denna vecka?' },
+    { label: 'Bokningspriser',  msg: 'Vad kostar det att boka ett rum?' },
+    { label: 'Boka VYN',       msg: 'Jag vill boka VYN' },
+    { label: 'Boka NAVET',     msg: 'Jag vill boka NAVET' },
+    { label: 'Avboka',          msg: 'Jag vill avboka en bokning' },
+    { label: 'Öppettider',      msg: 'Vilka är era öppettider?' },
+  ],
+};
+
+const ERRS = Object.freeze({
+  timeout: 'Förfrågan tog för lång tid. Kontrollera anslutningen och försök igen.',
+  offline:  'Ingen internetanslutning. Kontrollera nätverket och försök igen.',
+  http:     'Servern svarade med ett fel. Försök igen om en stund.',
+  parse:    'Oväntat svar från servern. Försök igen.',
+  unknown:  'Något gick fel. Försök igen om en stund.',
+});
+
+const st = { sid: crypto.randomUUID(), loc: null, busy: false, lastSent: 0, qaShown: true };
+
+/* ── Security ── */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;'}[c]));
+}
+
+function inl(raw) {
+  let t = esc(raw);
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+  return t;
+}
+
+/* ── Room helpers ── */
+function roomColor(name) {
+  const n = name.toUpperCase().trim();
+  for (const [k, v] of ROOM_PALETTE) { if (n.startsWith(k)) return v; }
+  return '#40BC86';
+}
+
+function hexParts(h) {
+  return [h.slice(1,3), h.slice(3,5), h.slice(5,7)].map(x => parseInt(x, 16));
+}
+
+/* ── Markdown parser ── */
+function parseBlocks(raw) {
+  const lines = raw.split('\n');
+  const blocks = [];
+  let i = 0;
+  let textLines = [];
+
+  const flush = () => {
+    if (textLines.length) { blocks.push({ type: 'text', lines: [...textLines] }); textLines = []; }
+  };
+
+  while (i < lines.length) {
+    const ln = lines[i];
+    // Table: line starts with | and next line is a separator
+    if (ln.trim().startsWith('|') && i + 1 < lines.length && /^\s*\|[\s\-:|]+\|\s*$/.test(lines[i + 1])) {
+      flush();
+      const tbl = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { tbl.push(lines[i]); i++; }
+      blocks.push({ type: 'table', lines: tbl });
+      continue;
+    }
+    textLines.push(ln);
+    i++;
+  }
+  flush();
+  return blocks;
+}
+
+function parseTableRows(lines) {
+  const rows = [];
+  for (const l of lines) {
+    if (/^\s*\|[\s\-:|]+\|\s*$/.test(l)) continue;
+    const cells = l.split('|').slice(1, -1).map(c => c.trim());
+    if (cells.length) rows.push(cells);
+  }
+  return rows;
+}
+
+function renderRoomCards(rows) {
+  if (rows.length < 2) return '';
+  const hdr = rows[0];
+  const data = rows.slice(1);
+
+  const idx = pat => hdr.findIndex(h => new RegExp(pat, 'i').test(h));
+  const rI = idx('room|rum');
+  const cI = idx('capac|person|antal');
+  const hI = idx('half|halv');
+  const fI = idx('full|hel');
+
+  const cards = data.map((row, i) => {
+    const raw   = (row[rI >= 0 ? rI : 0] || '').replace(/\*\*/g, '').trim();
+    const cap   = row[cI >= 0 ? cI : 1] || '';
+    const half  = row[hI >= 0 ? hI : 2] || '';
+    const full  = row[fI >= 0 ? fI : 3] || '';
+    const color = roomColor(raw);
+    const [r, g, b] = hexParts(color);
+    const imgUrl = ROOM_IMAGES[raw.toUpperCase()] || '';
+
+    const imgHtml = imgUrl
+      ? `<img class="rcard-img" src="${esc(imgUrl)}" alt="" loading="lazy" onerror="this.remove()"><div class="rcard-img-overlay"></div>`
+      : `<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(${r},${g},${b},0.22),rgba(${r},${g},${b},0.07))"></div>`;
+
+    return `<div class="rcard" style="animation-delay:${i * 55}ms" role="article" aria-label="${esc(raw)}">
+      <div class="rcard-vis" style="background:#0f1012">${imgHtml}
+        <div class="rcard-badge" style="background:rgba(${r},${g},${b},0.18);color:${color};border:1px solid rgba(${r},${g},${b},0.3)">${esc(raw)}</div>
+      </div>
+      <div class="rcard-body">
+        ${cap ? `<div class="rcard-cap">${esc(cap)}</div>` : ''}
+        <div class="rcard-prices">
+          ${half ? `<div class="rcard-price"><span class="rcard-price-label">Halvdag</span><span class="rcard-price-val">${esc(half)}</span></div>` : ''}
+          ${full ? `<div class="rcard-price"><span class="rcard-price-label">Heldag</span><span class="rcard-price-val">${esc(full)}</span></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="room-grid" role="list">${cards}</div>`;
+}
+
+function renderMdTable(lines) {
+  const rows = parseTableRows(lines);
+  if (!rows.length) return '';
+  const isRoomTbl = rows[0].some(h => /^(room|rum)$/i.test(h));
+  if (isRoomTbl) return renderRoomCards(rows);
+  const ths = rows[0].map(h => `<th>${inl(h)}</th>`).join('');
+  const trs = rows.slice(1).map(r => `<tr>${r.map(c => `<td>${inl(c)}</td>`).join('')}</tr>`).join('');
+  return `<table class="md-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+}
+
+function renderTextLines(lines) {
+  // Group into paragraphs split by blank lines
+  const paras = [];
+  let cur = [];
+  for (const l of lines) {
+    if (l.trim() === '') {
+      if (cur.length) { paras.push(cur.join('\n')); cur = []; }
+    } else {
+      cur.push(l);
+    }
+  }
+  if (cur.length) paras.push(cur.join('\n'));
+
+  return paras.map(p => {
+    const linesIn = p.split('\n');
+    // List block
+    if (/^[-•]\s/.test(linesIn[0])) {
+      const items = linesIn.filter(l => l.trim()).map(l => `<li>${inl(l.replace(/^[-•]\s+/, ''))}</li>`).join('');
+      return `<ul>${items}</ul>`;
+    }
+    // Signature detect
+    const isSig = /^(all the best|allt gott|med vänliga|mvh|bästa hälsningar)/i.test(p) || p.startsWith('/');
+    const tag = isSig ? 'p class="sig"' : 'p';
+    // Render line-by-line: a dashes-only line becomes a divider; others break with <br>
+    const htmlLines = linesIn.map(l => /^\s*-{3,}\s*$/.test(l) ? '<hr class="sum-hr">' : inl(l));
+    let out = '';
+    htmlLines.forEach((h, idx) => {
+      if (h === '<hr class="sum-hr">') { out += h; }
+      else { out += (idx > 0 && htmlLines[idx - 1] !== '<hr class="sum-hr">' ? '<br>' : '') + h; }
+    });
+    return `<${tag}>${out}</${tag}>`;
+  }).join('');
+}
+
+function md(raw) {
+  const blocks = parseBlocks(raw);
+  const hasTable = blocks.some(b => b.type === 'table');
+
+  if (!hasTable) {
+    // Simple path: all text, render as one bubble content
+    const allLines = blocks.flatMap(b => b.lines);
+    return { rich: false, html: renderTextLines(allLines) };
+  }
+
+  // Rich path: interleaved text and table blocks → multiple segments
+  const segs = blocks.map(b => {
+    if (b.type === 'table') return { rich: true, html: renderMdTable(b.lines) };
+    const html = renderTextLines(b.lines);
+    return html.trim() ? { rich: false, html } : null;
+  }).filter(Boolean);
+
+  return { rich: true, segs };
+}
+
+/* ── DOM ── */
+const el = id => document.getElementById(id);
+const welcome = el('welcome'), chatEl = el('chat'), msgsEl = el('msgs');
+const input = el('m-in'), sendBtn = el('send-btn'), ccEl = el('cc');
+const qaBar = el('qa-bar'), locLbl = el('loc-lbl');
+
+function hhmm(d) { return d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }); }
+function scrollEnd() { requestAnimationFrame(() => { msgsEl.scrollTop = msgsEl.scrollHeight; }); }
+
+let typEl = null;
+function showType() {
+  if (typEl) return;
+  typEl = document.createElement('div');
+  typEl.className = 'typing-row';
+  typEl.setAttribute('aria-label', 'Mötesstrategen skriver');
+  typEl.innerHTML = '<div class="av" aria-hidden="true">TP</div><div class="typing-bub" role="status"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  msgsEl.appendChild(typEl); scrollEnd();
+}
+function hideType() { typEl?.remove(); typEl = null; }
+
+function appendBot(text) {
+  hideType();
+  const row = document.createElement('div');
+  row.className = 'msg-row bot gap';
+  const now = hhmm(new Date());
+  const result = md(text);
+
+  if (!result.rich) {
+    row.innerHTML = `<div class="av" aria-hidden="true">TP</div><div class="msg-col"><div class="bubble">${result.html}</div><div class="msg-meta">${now}</div></div>`;
+  } else {
+    const inner = result.segs.map(s =>
+      s.rich
+        ? s.html
+        : `<div class="txt-seg">${s.html}</div>`
+    ).join('');
+    row.innerHTML = `<div class="av" aria-hidden="true">TP</div><div class="msg-col rich-col">${inner}<div class="msg-meta">${now}</div></div>`;
+  }
+  msgsEl.appendChild(row); scrollEnd();
+}
+
+function appendUser(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user gap';
+  row.innerHTML = `<div class="msg-col"><div class="bubble">${esc(text)}</div><div class="msg-meta">${hhmm(new Date())}</div></div>`;
+  msgsEl.appendChild(row); scrollEnd();
+}
+
+function appendErr(msg) {
+  hideType();
+  const row = document.createElement('div');
+  row.className = 'msg-row bot gap';
+  row.innerHTML = `<div class="av" aria-hidden="true">TP</div><div class="err-bubble" role="alert"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><circle cx="6.5" cy="6.5" r="6" stroke="currentColor"/><path d="M6.5 3.5v3M6.5 9v.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${esc(msg)}</div>`;
+  msgsEl.appendChild(row); scrollEnd();
+}
+
+function addMsg(role, text, errStr) {
+  if (role === 'user' && st.qaShown) { st.qaShown = false; qaBar.style.display = 'none'; }
+  if (errStr) appendErr(errStr);
+  else if (role === 'bot') appendBot(text);
+  else appendUser(text);
+}
+
+function setBusy(on) { st.busy = on; input.disabled = on; refreshSend(); }
+function refreshSend() {
+  const len = input.value.length;
+  sendBtn.disabled = !(len > 0 && !st.busy && Date.now() - st.lastSent >= CFG.rateMs);
+  if (len > 0) {
+    ccEl.textContent = `${len}/${CFG.maxLen}`;
+    ccEl.className = len >= CFG.maxLen ? 'over' : len > CFG.maxLen * 0.9 ? 'warn' : '';
+  } else { ccEl.textContent = ''; ccEl.className = ''; }
+}
+function resize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; }
+function buildQA() {
+  qaBar.innerHTML = '';
+  (QUICK[st.loc] || []).forEach(({ label, msg }) => {
+    const b = document.createElement('button');
+    b.className = 'qa-chip'; b.textContent = label;
+    b.setAttribute('aria-label', `Fråga: ${label}`);
+    b.addEventListener('click', () => send(msg));
+    qaBar.appendChild(b);
+  });
+}
+
+/* ── API ── */
+async function callAPI(msg) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), CFG.timeout);
+  try {
+    const r = await fetch(CFG.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Pot-Token': CFG.token },
+      body: JSON.stringify({ sessionId: st.sid, message: msg, location: st.loc, timestamp: Date.now() }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    if (!r.ok) return { ok: false, code: 'http' };
+    let data;
+    try { data = await r.json(); } catch { return { ok: false, code: 'parse' }; }
+    if (typeof data?.output !== 'string') return { ok: false, code: 'parse' };
+    return { ok: true, out: data.output };
+  } catch (e) {
+    clearTimeout(t);
+    if (e.name === 'AbortError') return { ok: false, code: 'timeout' };
+    if (!navigator.onLine) return { ok: false, code: 'offline' };
+    return { ok: false, code: 'unknown' };
+  }
+}
+
+async function send(text) {
+  const msg = (text || input.value).trim().slice(0, CFG.maxLen);
+  if (!msg || st.busy || Date.now() - st.lastSent < CFG.rateMs) return;
+  st.lastSent = Date.now();
+  addMsg('user', msg);
+  input.value = ''; resize(); setBusy(true); ccEl.textContent = ''; showType();
+  const res = await callAPI(msg);
+  setBusy(false);
+  if (res.ok) addMsg('bot', res.out);
+  else addMsg('bot', '', ERRS[res.code] ?? ERRS.unknown);
+  setTimeout(refreshSend, CFG.rateMs + 50);
+  if (!input.disabled) input.focus();
+}
+
+/* ── Welcome ── */
+const cards = document.querySelectorAll('.loc-card');
+const startB = el('start-btn');
+cards.forEach(c => {
+  c.addEventListener('click', () => {
+    cards.forEach(x => { x.classList.remove('on'); x.setAttribute('aria-checked', 'false'); });
+    c.classList.add('on'); c.setAttribute('aria-checked', 'true');
+    st.loc = c.dataset.loc; startB.disabled = false;
+  });
+});
+startB.addEventListener('click', () => {
+  if (!st.loc) return;
+  locLbl.textContent = st.loc === 'karlskrona' ? 'Karlskrona' : 'Karlshamn';
+  welcome.classList.add('out'); chatEl.classList.add('on'); buildQA();
+  addMsg('bot', `Hej! Jag är Mötesstrategen, din AI-assistent för The Pot ${st.loc === 'karlskrona' ? 'Karlskrona' : 'Karlshamn'}. Hur kan jag hjälpa dig idag?`);
+  setTimeout(() => input.focus(), 420);
+});
+
+/* ── Chat input ── */
+input.addEventListener('input', () => { resize(); refreshSend(); });
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+sendBtn.addEventListener('click', () => send());
+
+input.addEventListener('paste', e => {
+  e.preventDefault();
+  const pasted = (e.clipboardData ?? window.clipboardData).getData('text/plain');
+  const cur = input.value, ss = input.selectionStart ?? cur.length, se = input.selectionEnd ?? cur.length;
+  const ins = pasted.slice(0, Math.max(0, CFG.maxLen - (cur.length - (se - ss))));
+  input.value = cur.slice(0, ss) + ins + cur.slice(se);
+  const p = ss + ins.length; input.setSelectionRange(p, p);
+  resize(); refreshSend();
+});
+
+/* ── New chat (sequenced to avoid welcome/chat overlap flicker) ── */
+el('new-btn').addEventListener('click', () => {
+  // 1) hide chat first
+  chatEl.classList.remove('on');
+  // 2) reset all state
+  st.sid = crypto.randomUUID(); st.busy = false; st.lastSent = 0; st.qaShown = true; st.loc = null;
+  msgsEl.innerHTML = ''; hideType(); qaBar.style.display = '';
+  input.value = ''; input.disabled = false; resize(); refreshSend();
+  cards.forEach(c => { c.classList.remove('on'); c.setAttribute('aria-checked', 'false'); });
+  startB.disabled = true;
+  locLbl.textContent = '—';
+  // 3) show welcome after the chat has faded out
+  setTimeout(() => { welcome.classList.remove('out'); }, 180);
+});
+</script>
+</body>
+</html>

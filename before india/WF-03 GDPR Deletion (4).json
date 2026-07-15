@@ -1,0 +1,153 @@
+{
+  "name": "WF-03 GDPR Deletion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "DELETE",
+        "path": "thepot-gdpr-delete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5fff298d-5d65-487a-a614-d0b4aaed71f1",
+      "name": "Webhook",
+      "webhookId": "6f8c0db5-d843-4f3f-a913-9e142311017f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessionId = $input.first().json.query?.sessionId || \n                  $input.first().json.body?.sessionId;\n\nif (!sessionId) {\n  return [{\n    json: {\n      success: false,\n      error: 'sessionId is required'\n    }\n  }];\n}\n\nreturn [{\n  json: { sessionId }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f3efc8ec-78fd-4964-833a-0e614c58b2fa",
+      "name": "Validate Request"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM pii_store WHERE session_id = '{{ $json.sessionId }}';\nDELETE FROM chat_memory WHERE session_id = '{{ $json.sessionId }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        400,
+        0
+      ],
+      "id": "b6199dcc-105b-46d3-9f5a-e03a5adf7d57",
+      "name": "Delete PII",
+      "credentials": {
+        "postgres": {
+          "id": "NcUhJEGE7ousw3YT",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://correct-polecat-132366.upstash.io/del/session:{{ $('Validate Request').item.json.sessionId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        0
+      ],
+      "id": "4879ace2-0f79-4779-a952-01dfe4f43b53",
+      "name": "Delete Session from Upstash",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "LzEp7P9D8rbefTPb",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"success\": true, \"message\": \"All data deleted for session\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        816,
+        0
+      ],
+      "id": "69aba2b5-3c40-4390-bef9-e737d53c59cb",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request": {
+      "main": [
+        [
+          {
+            "node": "Delete PII",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete PII": {
+      "main": [
+        [
+          {
+            "node": "Delete Session from Upstash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Session from Upstash": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6af11227-a7a9-4085-9c8c-23e5d103e594",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e85755a1ab507c713a9f4cf48c4360502159bced58a203587866a6f09e12feba"
+  },
+  "id": "H5sjcKpDxxRcvulw",
+  "tags": []
+}
